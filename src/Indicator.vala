@@ -16,10 +16,17 @@
  */
 
 public class Drop.Indicator : Wingpanel.Indicator {
+	private const string NOTIFICATION_ICON = "";
+
 	private Drop.Session session;
+	private Notify.Notification notification;
 
 	private Gtk.Label display_icon;
 	private Gtk.Grid main_grid;
+	private Gtk.Grid in_grid;
+	private Gtk.Grid out_grid;
+
+	private bool open = false;
 
 	public Indicator () {
 		Object (code_name: "Wingpanel-Indicator-Drop",
@@ -31,7 +38,7 @@ public class Drop.Indicator : Wingpanel.Indicator {
 		if (display_icon == null) {
 			display_icon = new Gtk.Label ("D");
 		}
-		
+
 		return display_icon;
 	}
 
@@ -41,33 +48,90 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			main_grid.orientation = Gtk.Orientation.VERTICAL;
 			session = new Drop.Session ();
 
-			session.new_incoming_transmission.connect ((transmission) => {
-				debug ("Requesting Transmition\n");
-				var widget = new Drop.Widgets.IncomingTransmission (transmission);
-				widget.margin = 4;
+			var in_transmissions = session.get_incoming_transmissions ();
+			var out_transmissions = session.get_outgoing_transmissions ();
 
-				main_grid.add (widget);
-				widget.visible = true;
-			});
-			
-			session.new_outgoing_transmission.connect ((transmission) => {
-				debug ("Requesting Transmition\n");
-				var widget = new Drop.Widgets.OutgoingTransmission (transmission);
-				widget.margin = 4;
+			foreach (var transmission in in_transmissions) {
+				incoming (new Drop.IncomingTransmission (transmission));
+			}
 
-				main_grid.add (widget);
-				widget.visible = true;
+			foreach (var transmission in out_transmissions) {
+				outgoing (new Drop.OutgoingTransmission (transmission));
+			}
+
+			main_grid.remove.connect (() => {
+				chech_visibility ();
 			});
 
+			session.new_incoming_transmission.connect (incoming);
+			session.new_outgoing_transmission.connect (outgoing);
+
+			chech_visibility ();
+			setup_notify ();
 		}
-		visible = true;
+
 		return main_grid;
 	}
 
-	public override void opened () {}
+	private void setup_notify () {
+		if (notification == null) {
+			Notify.init ("Drop");
+			string summary = "Incoming File";
+			string body = "";
 
-	public override void closed () {}
+			notification = new Notify.Notification (summary, body, NOTIFICATION_ICON);
+		}
+	}
 
+	private void show_notification (string message) {
+		if (!open) {
+			notification.update ("Incoming File", message, NOTIFICATION_ICON);
+
+			try {
+				notification.show ();
+			} catch (Error E) {}
+		}
+	}
+
+	private void incoming (Drop.IncomingTransmission transmission) {
+		debug ("Requesting incoming Transmition\n");
+		var widget = new Drop.Widgets.IncomingTransmission (transmission);
+		widget.margin = 4;
+
+		main_grid.add (widget);
+		widget.visible = true;
+
+		if (notification != null) {
+			show_notification (widget.label);
+		}
+
+		chech_visibility ();
+	}
+
+	private void outgoing (Drop.OutgoingTransmission transmission) {
+		debug ("Requesting outgoing Transmition\n");
+		var widget = new Drop.Widgets.OutgoingTransmission (transmission);
+		widget.margin = 4;
+
+		main_grid.add (widget);
+		widget.visible = true;
+
+		chech_visibility ();
+	}
+
+	private void chech_visibility () {
+		if (main_grid.get_children ().length () == 0) visible = false;
+		else if (!visible) visible = true;
+	}
+
+	public override void opened () {
+		open = true;
+	}
+
+	public override void closed () {
+		open = false;
+		chech_visibility ();
+	}
 }
 
 public Wingpanel.Indicator? get_indicator (Module module, Wingpanel.IndicatorManager.ServerType server_type) {
