@@ -19,12 +19,12 @@ public class Drop.Indicator : Wingpanel.Indicator {
 	private const string NOTIFICATION_ICON = "";
 
 	private Drop.Session session;
+	private Drop.Widgets.IncomingTransmissionList in_list;
+	private Drop.Widgets.OutgoingTransmissionList out_list;
 	private Notify.Notification notification;
 
 	private Gtk.Label display_icon;
 	private Gtk.Grid main_grid;
-	private Gtk.Grid in_grid;
-	private Gtk.Grid out_grid;
 
 	private bool open = false;
 
@@ -44,30 +44,35 @@ public class Drop.Indicator : Wingpanel.Indicator {
 
 	public override Gtk.Widget? get_widget () {
 		if (main_grid == null) {
-			main_grid = new Gtk.Grid ();
-			main_grid.orientation = Gtk.Orientation.VERTICAL;
 			session = new Drop.Session ();
 
-			var in_transmissions = session.get_incoming_transmissions ();
-			var out_transmissions = session.get_outgoing_transmissions ();
+			main_grid = new Gtk.Grid ();
+			main_grid.orientation = Gtk.Orientation.VERTICAL;
+			in_list = new Drop.Widgets.IncomingTransmissionList (session);
+			out_list = new Drop.Widgets.OutgoingTransmissionList (session);
 
-			foreach (var transmission in in_transmissions) {
-				incoming (new Drop.IncomingTransmission (transmission));
-			}
-
-			foreach (var transmission in out_transmissions) {
-				outgoing (new Drop.OutgoingTransmission (transmission));
-			}
-
-			main_grid.remove.connect (() => {
+			in_list.new_transmission.connect ((transmission) => {
+				show_notification ("New Incoming File");
 				chech_visibility ();
 			});
-
-			session.new_incoming_transmission.connect (incoming);
-			session.new_outgoing_transmission.connect (outgoing);
+			
+			out_list.new_transmission.connect ((transmission) => {
+				chech_visibility ();
+			});
+			
+			in_list.transmission_removed.connect ((transmission) => {
+				chech_visibility ();
+			});	
+			
+			out_list.transmission_removed.connect ((transmission) => {
+				chech_visibility ();
+			});	
 
 			chech_visibility ();
 			setup_notify ();
+
+			main_grid.add (in_list);
+			main_grid.add (out_list);
 		}
 
 		return main_grid;
@@ -85,42 +90,15 @@ public class Drop.Indicator : Wingpanel.Indicator {
 
 	private void show_notification (string message) {
 		if (!open) {
-			notification.update ("Incoming File", message, NOTIFICATION_ICON);
-
+			this.notification.update ("Drop share", message, NOTIFICATION_ICON);
 			try {
-				notification.show ();
+				this.notification.show ();
 			} catch (Error E) {}
 		}
 	}
 
-	private void incoming (Drop.IncomingTransmission transmission) {
-		debug ("Requesting incoming Transmition\n");
-		var widget = new Drop.Widgets.IncomingTransmission (transmission);
-		widget.margin = 4;
-
-		main_grid.add (widget);
-		widget.visible = true;
-
-		if (notification != null) {
-			show_notification (widget.label);
-		}
-
-		chech_visibility ();
-	}
-
-	private void outgoing (Drop.OutgoingTransmission transmission) {
-		debug ("Requesting outgoing Transmition\n");
-		var widget = new Drop.Widgets.OutgoingTransmission (transmission);
-		widget.margin = 4;
-
-		main_grid.add (widget);
-		widget.visible = true;
-
-		chech_visibility ();
-	}
-
 	private void chech_visibility () {
-		if (main_grid.get_children ().length () == 0) visible = false;
+		if (in_list.transmissions == 0 && out_list.transmissions == 0) visible = false;
 		else if (!visible) visible = true;
 	}
 
@@ -135,7 +113,6 @@ public class Drop.Indicator : Wingpanel.Indicator {
 }
 
 public Wingpanel.Indicator? get_indicator (Module module, Wingpanel.IndicatorManager.ServerType server_type) {
-	// Temporal workarround for Greeter crash
 	if (server_type != Wingpanel.IndicatorManager.ServerType.SESSION)
 		return null;
 	debug ("Activating Keyboard Indicator");
