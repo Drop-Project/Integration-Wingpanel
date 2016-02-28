@@ -51,12 +51,12 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			in_list = new Drop.Widgets.IncomingTransmissionList (session);
 			out_list = new Drop.Widgets.OutgoingTransmissionList (session);
 
-			in_list.new_transmission.connect ((transmission) => {
+			in_list.transmission_added.connect ((transmission) => {
 				show_notification ("New Incoming File");
 				chech_visibility ();
 			});
 			
-			out_list.new_transmission.connect ((transmission) => {
+			out_list.transmission_added.connect ((transmission) => {
 				chech_visibility ();
 			});
 			
@@ -73,6 +73,7 @@ public class Drop.Indicator : Wingpanel.Indicator {
 
 			main_grid.add (in_list);
 			main_grid.add (out_list);
+			main_grid.show_all ();
 		}
 
 		return main_grid;
@@ -98,7 +99,7 @@ public class Drop.Indicator : Wingpanel.Indicator {
 	}
 
 	private void chech_visibility () {
-		if (in_list.transmissions == 0 && out_list.transmissions == 0) visible = false;
+		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) visible = false;
 		else if (!visible) visible = true;
 	}
 
