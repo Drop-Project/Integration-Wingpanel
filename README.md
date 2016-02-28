@@ -1,5 +1,5 @@
 # Integration-Wingpanel
-Wingpanel is the default panel in elementary OS. After installing this integration a new indicator will appear in the panel that lists all running incoming and outgoing transmissions.
+Wingpanel is the default panel in elementary OS Loki. After installing this integration a new indicator will appear in the panel that lists all running incoming and outgoing transmissions.
 
 ## Installation
 ```
