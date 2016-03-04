@@ -16,7 +16,7 @@
  */
 
 public class Drop.Indicator : Wingpanel.Indicator {
-	private const string NOTIFICATION_ICON = "";
+	private const string NOTIFICATION_ICON = "application-default-icon";
 
 	private Drop.Session session;
 	private Drop.Widgets.IncomingTransmissionList in_list;
@@ -52,23 +52,28 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			out_list = new Drop.Widgets.OutgoingTransmissionList (session);
 
 			in_list.transmission_added.connect ((transmission) => {
-				show_notification ("New Incoming File");
-				chech_visibility ();
+			    try {
+			         show_notification (_("Incoming file from: %s").printf(transmission.get_client_name ()));
+			    } catch (Error e) {
+			        stderr.printf ("Transmission error: %s", e.message);
+			    }
+
+				check_visibility ();
 			});
-			
+
 			out_list.transmission_added.connect ((transmission) => {
-				chech_visibility ();
+				check_visibility ();
 			});
-			
+
 			in_list.transmission_removed.connect ((transmission) => {
-				chech_visibility ();
-			});	
-			
+				check_visibility ();
+			});
+
 			out_list.transmission_removed.connect ((transmission) => {
-				chech_visibility ();
+				check_visibility ();
 			});	
 
-			chech_visibility ();
+			check_visibility ();
 			setup_notify ();
 
 			main_grid.add (in_list);
@@ -82,34 +87,40 @@ public class Drop.Indicator : Wingpanel.Indicator {
 	private void setup_notify () {
 		if (notification == null) {
 			Notify.init ("Drop");
-			string summary = "Incoming File";
-			string body = "";
 
-			notification = new Notify.Notification (summary, body, NOTIFICATION_ICON);
+			notification = new Notify.Notification ("", "", NOTIFICATION_ICON);
 		}
 	}
 
 	private void show_notification (string message) {
 		if (!open) {
-			this.notification.update ("Drop share", message, NOTIFICATION_ICON);
+			this.notification.update ("Drop", message, NOTIFICATION_ICON);
 			try {
 				this.notification.show ();
 			} catch (Error E) {}
 		}
 	}
 
-	private void chech_visibility () {
-		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) visible = false;
-		else if (!visible) visible = true;
+	private void check_visibility () {
+		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) {
+		    close ();
+		    visible = false;
+		} else if (!visible) {
+		    visible = true;
+		}
 	}
 
 	public override void opened () {
 		open = true;
+
+		try {
+		    notification.close ();
+		} catch (Error e) {}
 	}
 
 	public override void closed () {
 		open = false;
-		chech_visibility ();
+		check_visibility ();
 	}
 }
 
