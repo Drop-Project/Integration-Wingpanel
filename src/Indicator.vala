@@ -16,7 +16,7 @@
  */
 
 public class Drop.Indicator : Wingpanel.Indicator {
-	private const string NOTIFICATION_ICON = "";
+	private const string NOTIFICATION_ICON = "application-default-icon";
 
 	private Drop.Session session;
 	private Drop.Widgets.IncomingTransmissionList in_list;
@@ -52,23 +52,28 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			out_list = new Drop.Widgets.OutgoingTransmissionList (session);
 
 			in_list.transmission_added.connect ((transmission) => {
-				show_notification ("New Incoming File");
-				chech_visibility ();
-			});
-			
-			out_list.transmission_added.connect ((transmission) => {
-				chech_visibility ();
-			});
-			
-			in_list.transmission_removed.connect ((transmission) => {
-				chech_visibility ();
-			});	
-			
-			out_list.transmission_removed.connect ((transmission) => {
-				chech_visibility ();
-			});	
+				try {
+					show_notification (_("Incoming file from: %s").printf (transmission.get_client_name ()));
+				} catch (Error e) {
+					warning ("Transmission error: %s", e.message);
+				}
 
-			chech_visibility ();
+				check_visibility ();
+			});
+
+			out_list.transmission_added.connect ((transmission) => {
+				check_visibility ();
+			});
+
+			in_list.transmission_removed.connect ((transmission) => {
+				check_visibility ();
+			});
+
+			out_list.transmission_removed.connect ((transmission) => {
+				check_visibility ();
+			});
+
+			check_visibility ();
 			setup_notify ();
 
 			main_grid.add (in_list);
@@ -82,34 +87,44 @@ public class Drop.Indicator : Wingpanel.Indicator {
 	private void setup_notify () {
 		if (notification == null) {
 			Notify.init ("Drop");
-			string summary = "Incoming File";
-			string body = "";
 
-			notification = new Notify.Notification (summary, body, NOTIFICATION_ICON);
+			notification = new Notify.Notification ("", "", NOTIFICATION_ICON);
 		}
 	}
 
 	private void show_notification (string message) {
 		if (!open) {
-			this.notification.update ("Drop share", message, NOTIFICATION_ICON);
+			this.notification.update ("Drop", message, NOTIFICATION_ICON);
 			try {
 				this.notification.show ();
-			} catch (Error E) {}
+			} catch (Error e) {
+			    warning ("Notification could not be shown: %s", e.message);
+			}
 		}
 	}
 
-	private void chech_visibility () {
-		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) visible = false;
-		else if (!visible) visible = true;
+	private void check_visibility () {
+		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) {
+		    this.close ();
+		    this.visible = false;
+		} else if (!this.visible) {
+		    this.visible = true;
+		}
 	}
 
 	public override void opened () {
 		open = true;
+
+		try {
+		    notification.close ();
+		} catch (Error e) {
+		    warning ("Notification could not be closed: %s", e.message);
+		}
 	}
 
 	public override void closed () {
 		open = false;
-		chech_visibility ();
+		check_visibility ();
 	}
 }
 
