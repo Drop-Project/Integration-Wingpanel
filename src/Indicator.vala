@@ -58,7 +58,7 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			        stderr.printf ("Transmission error: %s", e.message);
 			    }
 
-				check_visibility ();
+			    check_visibility ();
 			});
 
 			out_list.transmission_added.connect ((transmission) => {
