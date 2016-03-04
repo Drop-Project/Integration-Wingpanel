@@ -71,7 +71,7 @@ public class Drop.Indicator : Wingpanel.Indicator {
 
 			out_list.transmission_removed.connect ((transmission) => {
 				check_visibility ();
-			});	
+			});
 
 			check_visibility ();
 			setup_notify ();
