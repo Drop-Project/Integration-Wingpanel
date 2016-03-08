@@ -52,13 +52,13 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			out_list = new Drop.Widgets.OutgoingTransmissionList (session);
 
 			in_list.transmission_added.connect ((transmission) => {
-			    try {
-			         show_notification (_("Incoming file from: %s").printf(transmission.get_client_name ()));
-			    } catch (Error e) {
-			        stderr.printf ("Transmission error: %s", e.message);
-			    }
+				try {
+					show_notification (_("Incoming file from: %s").printf(transmission.get_client_name ()));
+				} catch (Error e) {
+					warning ("Transmission error: %s", e.message);
+				}
 
-			    check_visibility ();
+				check_visibility ();
 			});
 
 			out_list.transmission_added.connect ((transmission) => {
@@ -97,16 +97,18 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			this.notification.update ("Drop", message, NOTIFICATION_ICON);
 			try {
 				this.notification.show ();
-			} catch (Error E) {}
+			} catch (Error e) {
+			    warning ("Notification could not be shown: %s", e.message);
+			}
 		}
 	}
 
 	private void check_visibility () {
 		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) {
-		    close ();
-		    visible = false;
-		} else if (!visible) {
-		    visible = true;
+		    this.close ();
+		    this.visible = false;
+		} else if (!this.visible) {
+		    this.visible = true;
 		}
 	}
 
@@ -115,7 +117,9 @@ public class Drop.Indicator : Wingpanel.Indicator {
 
 		try {
 		    notification.close ();
-		} catch (Error e) {}
+		} catch (Error e) {
+		    warning ("Notification could not be closed: %s", e.message);
+		}
 	}
 
 	public override void closed () {
