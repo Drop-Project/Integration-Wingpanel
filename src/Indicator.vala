@@ -53,7 +53,7 @@ public class Drop.Indicator : Wingpanel.Indicator {
 
 			in_list.transmission_added.connect ((transmission) => {
 				try {
-					show_notification (_("Incoming file from: %s").printf(transmission.get_client_name ()));
+					show_notification (_("Incoming file from: %s").printf (transmission.get_client_name ()));
 				} catch (Error e) {
 					warning ("Transmission error: %s", e.message);
 				}
