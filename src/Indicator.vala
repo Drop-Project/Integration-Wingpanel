@@ -98,17 +98,20 @@ public class Drop.Indicator : Wingpanel.Indicator {
 			try {
 				this.notification.show ();
 			} catch (Error e) {
-			    warning ("Notification could not be shown: %s", e.message);
+				warning ("Notification could not be shown: %s", e.message);
 			}
 		}
 	}
 
 	private void check_visibility () {
 		if (in_list.transmission_count == 0 && out_list.transmission_count == 0) {
-		    this.close ();
-		    this.visible = false;
+			if (open) {
+				this.close ();
+			}
+
+			this.visible = false;
 		} else if (!this.visible) {
-		    this.visible = true;
+			this.visible = true;
 		}
 	}
 
@@ -116,9 +119,9 @@ public class Drop.Indicator : Wingpanel.Indicator {
 		open = true;
 
 		try {
-		    notification.close ();
+			notification.close ();
 		} catch (Error e) {
-		    warning ("Notification could not be closed: %s", e.message);
+			warning ("Notification could not be closed: %s", e.message);
 		}
 	}
 
